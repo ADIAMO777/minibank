@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MiniBank</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+    th, td { border-bottom: 1px solid #ddd; padding: .5rem; text-align: left; }
+    form { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    input, button { padding: .5rem; }
+    #msg { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>MiniBank</h1>
+  <p id="msg"></p>
+
+  <h2>Accounts</h2>
+  <table><thead><tr><th>ID</th><th>Name</th><th>Balance (NGN)</th></tr></thead><tbody id="accounts"></tbody></table>
+
+  <h3>Open account</h3>
+  <form id="new-account">
+    <input name="name" placeholder="Full name" required>
+    <input name="balance" type="number" min="0" step="0.01" placeholder="Opening balance" required>
+    <button>Create</button>
+  </form>
+
+  <h3>Transfer</h3>
+  <form id="transfer">
+    <input name="from" type="number" placeholder="From ID" required>
+    <input name="to" type="number" placeholder="To ID" required>
+    <input name="amount" type="number" min="0.01" step="0.01" placeholder="Amount" required>
+    <button>Send</button>
+  </form>
+
+  <h2>Recent transactions</h2>
+  <table><thead><tr><th>#</th><th>From</th><th>To</th><th>Amount</th><th>Time</th></tr></thead><tbody id="txs"></tbody></table>
+
+<script>
+const msg = (t) => (document.getElementById("msg").textContent = t);
+const money = (n) => Number(n).toLocaleString("en-NG", { minimumFractionDigits: 2 });
+
+async function load() {
+  const accounts = await (await fetch("/accounts-api/accounts")).json();
+  document.getElementById("accounts").innerHTML = accounts
+    .map((a) => `<tr><td>${a.id}</td><td>${a.name}</td><td>${money(a.balance)}</td></tr>`).join("");
+  const txs = await (await fetch("/transactions-api/transactions")).json();
+  document.getElementById("txs").innerHTML = txs
+    .map((t) => `<tr><td>${t.id}</td><td>${t.from_account}</td><td>${t.to_account}</td><td>${money(t.amount)}</td><td>${new Date(t.created_at).toLocaleString()}</td></tr>`).join("");
+}
+
+async function post(url, form) {
+  const body = Object.fromEntries(new FormData(form));
+  for (const k of ["from", "to", "amount", "balance"]) if (k in body) body[k] = Number(body[k]);
+  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await res.json();
+  msg(res.ok ? "Done ✔" : `Error: ${data.error}`);
+  if (res.ok) form.reset();
+  load();
+}
+
+document.getElementById("new-account").onsubmit = (e) => { e.preventDefault(); post("/accounts-api/accounts", e.target); };
+document.getElementById("transfer").onsubmit = (e) => { e.preventDefault(); post("/transactions-api/transactions", e.target); };
+load();
+</script>
+</body>
+</html>
