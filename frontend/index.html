@@ -3,67 +3,479 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MiniBank</title>
+  <meta name="theme-color" content="#f5f7f4">
+  <title>MiniBank — Your money, made simple</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
-    th, td { border-bottom: 1px solid #ddd; padding: .5rem; text-align: left; }
-    form { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
-    input, button { padding: .5rem; }
-    #msg { font-weight: bold; }
+    :root {
+      color-scheme: light;
+      --ink: #18251f;
+      --muted: #78847d;
+      --green: #176b4b;
+      --green-dark: #104d37;
+      --mint: #e8f3ed;
+      --line: #e8ece8;
+      --paper: #fff;
+      --canvas: #f5f7f4;
+      --amber: #f6c96b;
+      --shadow: 0 12px 36px rgba(31, 55, 42, .06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input, select { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    a { color: inherit; text-decoration: none; }
+    .app-shell { min-height: 100vh; }
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 2;
+      display: flex;
+      width: 244px;
+      flex-direction: column;
+      padding: 30px 18px 20px;
+      background: #fff;
+      border-right: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px; font-size: 19px; font-weight: 750; letter-spacing: -.6px; }
+    .brand-mark { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; background: var(--green); color: white; }
+    .brand-mark svg { width: 20px; height: 20px; }
+    .nav-label { margin: 48px 10px 12px; color: #a0aaa3; font-size: 10px; font-weight: 750; letter-spacing: 1.4px; text-transform: uppercase; }
+    .nav-links { display: grid; gap: 5px; }
+    .nav-link { display: flex; align-items: center; gap: 13px; padding: 11px 12px; border-radius: 11px; color: #6f7b73; font-size: 13px; font-weight: 600; transition: .2s ease; }
+    .nav-link svg { width: 18px; height: 18px; }
+    .nav-link:hover, .nav-link.active { background: var(--mint); color: var(--green); }
+    .sidebar-bottom { margin-top: auto; padding: 16px 12px 4px; }
+    .help-card { padding: 16px; border-radius: 14px; background: #f6f8f5; }
+    .help-card strong { display: block; margin-bottom: 5px; font-size: 12px; }
+    .help-card p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .help-dot { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: #46a878; }
+    .main { min-height: 100vh; margin-left: 244px; padding: 0 48px 56px; }
+    .topbar { display: flex; min-height: 88px; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+    .breadcrumb { color: var(--muted); font-size: 12px; }
+    .breadcrumb strong { color: var(--ink); font-weight: 650; }
+    .top-actions { display: flex; align-items: center; gap: 17px; }
+    .date-label { color: var(--muted); font-size: 12px; }
+    .avatar { display: grid; width: 38px; height: 38px; place-items: center; border: 2px solid white; border-radius: 50%; background: #e7c7a8; color: #59432e; font-size: 12px; font-weight: 750; box-shadow: 0 0 0 1px var(--line); }
+    .content { width: min(100%, 1120px); margin: 0 auto; }
+    .welcome { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 34px 0 25px; }
+    .eyebrow { margin: 0 0 7px; color: var(--green); font-size: 10px; font-weight: 750; letter-spacing: 1.5px; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(25px, 3vw, 32px); font-weight: 700; letter-spacing: -1.15px; line-height: 1.2; }
+    .welcome-copy { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+    .button { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 9px; border: 0; border-radius: 10px; background: var(--green); color: #fff; cursor: pointer; font-size: 12px; font-weight: 700; padding: 0 16px; transition: background .2s, transform .2s; }
+    .button:hover { transform: translateY(-1px); background: var(--green-dark); }
+    .button:disabled { cursor: wait; opacity: .65; transform: none; }
+    .button svg { width: 16px; height: 16px; }
+    .overview { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, .85fr) minmax(0, .85fr); gap: 16px; }
+    .balance-card { position: relative; overflow: hidden; min-height: 183px; padding: 23px 25px; border-radius: 17px; background: linear-gradient(125deg, #176b4b 0%, #104d37 100%); color: white; box-shadow: 0 14px 30px rgba(23, 107, 75, .15); }
+    .balance-card::after, .balance-card::before { position: absolute; width: 190px; height: 190px; border: 1px solid rgba(255,255,255,.1); border-radius: 50%; content: ""; }
+    .balance-card::before { top: -105px; right: -38px; }
+    .balance-card::after { top: -73px; right: -73px; }
+    .balance-top { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; color: rgba(255,255,255,.76); font-size: 11px; }
+    .balance-chip { padding: 5px 9px; border: 1px solid rgba(255,255,255,.2); border-radius: 7px; color: #fff; font-size: 10px; }
+    .balance-amount { position: relative; z-index: 1; display: block; margin-top: 15px; font-size: clamp(26px, 3vw, 35px); font-weight: 650; letter-spacing: -1px; }
+    .balance-caption { position: relative; z-index: 1; margin-top: 8px; color: rgba(255,255,255,.72); font-size: 10px; }
+    .stat-card { display: flex; min-height: 183px; flex-direction: column; justify-content: space-between; padding: 21px; border: 1px solid var(--line); border-radius: 17px; background: var(--paper); box-shadow: var(--shadow); }
+    .stat-head { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 11px; }
+    .stat-icon { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 10px; background: var(--mint); color: var(--green); }
+    .stat-icon svg { width: 17px; height: 17px; }
+    .stat-value { margin-top: 17px; font-size: 27px; font-weight: 700; letter-spacing: -.8px; }
+    .stat-note { color: var(--muted); font-size: 10px; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(285px, .75fr); gap: 17px; margin-top: 20px; align-items: start; }
+    .panel { border: 1px solid var(--line); border-radius: 16px; background: var(--paper); box-shadow: var(--shadow); }
+    .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 21px 15px; }
+    .panel-heading h2 { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: -.2px; }
+    .panel-heading p { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+    .text-link { color: var(--green); cursor: pointer; font-size: 10px; font-weight: 700; }
+    .account-list { padding: 0 21px 12px; }
+    .account-row { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(80px, .8fr) auto; align-items: center; gap: 12px; min-height: 62px; border-top: 1px solid #f0f2f0; }
+    .account-person { display: flex; min-width: 0; align-items: center; gap: 10px; }
+    .account-avatar { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 11px; background: #eff2ed; color: var(--green); font-size: 11px; font-weight: 750; text-transform: uppercase; }
+    .account-name { overflow: hidden; font-size: 11px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+    .account-id { margin-top: 2px; color: var(--muted); font-size: 9px; }
+    .account-type { color: var(--muted); font-size: 10px; }
+    .account-balance { text-align: right; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .empty-state { padding: 23px 0; color: var(--muted); font-size: 11px; text-align: center; }
+    .transfer-panel { padding-bottom: 20px; }
+    .transfer-panel .panel-heading { padding-bottom: 17px; }
+    .secure-label { display: inline-flex; align-items: center; gap: 5px; color: var(--green); font-size: 9px; font-weight: 650; }
+    .secure-label svg { width: 13px; height: 13px; }
+    .form-body { display: grid; gap: 13px; padding: 0 21px; }
+    .field { display: grid; gap: 6px; }
+    .field label { color: #536159; font-size: 10px; font-weight: 650; }
+    .field input, .field select { width: 100%; height: 41px; padding: 0 11px; border: 1px solid #e5eae5; border-radius: 9px; outline: none; background: #fff; color: var(--ink); font-size: 11px; transition: border-color .2s, box-shadow .2s; }
+    .field input::placeholder { color: #a5afa8; }
+    .field input:focus, .field select:focus { border-color: #75a88f; box-shadow: 0 0 0 3px rgba(23,107,75,.08); }
+    .amount-wrap { position: relative; }
+    .currency-prefix { position: absolute; top: 50%; left: 12px; color: var(--muted); font-size: 11px; transform: translateY(-50%); }
+    .amount-wrap input { padding-left: 42px; }
+    .form-hint { margin: -5px 0 0; color: var(--muted); font-size: 9px; }
+    .transfer-submit { width: 100%; margin-top: 2px; }
+    .new-account-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; padding-bottom: 20px; }
+    .activity-panel { margin-top: 18px; }
+    .activity-table-wrap { overflow-x: auto; padding: 0 21px 14px; }
+    .activity-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .activity-table th { padding: 10px 9px; color: #97a199; font-size: 9px; font-weight: 650; white-space: nowrap; }
+    .activity-table td { padding: 12px 9px; border-top: 1px solid #f0f2f0; font-size: 10px; white-space: nowrap; }
+    .activity-table th:first-child, .activity-table td:first-child { padding-left: 0; }
+    .activity-table th:last-child, .activity-table td:last-child { padding-right: 0; text-align: right; }
+    .transfer-label { display: flex; align-items: center; gap: 7px; }
+    .transfer-mark { display: grid; width: 26px; height: 26px; place-items: center; border-radius: 9px; background: #f0f5f1; color: var(--green); }
+    .transfer-mark svg { width: 13px; height: 13px; }
+    .tx-account { color: var(--muted); font-size: 9px; }
+    .amount-out { color: #ba5d50; font-weight: 700; }
+    .amount-in { color: var(--green); font-weight: 700; }
+    .toast { position: fixed; right: 25px; bottom: 24px; z-index: 5; max-width: min(420px, calc(100vw - 32px)); padding: 13px 17px; border: 1px solid var(--line); border-radius: 11px; background: white; box-shadow: 0 10px 30px rgba(24,37,31,.12); color: var(--ink); font-size: 12px; opacity: 0; pointer-events: none; transform: translateY(8px); transition: .22s ease; }
+    .toast.visible { opacity: 1; transform: translateY(0); }
+    .toast.error { border-color: #f0c9c5; color: #a7463d; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; clip-path: inset(50%); }
+    @media (max-width: 1050px) {
+      .main { padding-right: 28px; padding-left: 28px; }
+      .overview { grid-template-columns: 1.2fr .8fr .8fr; gap: 11px; }
+      .stat-card { padding: 17px; }
+      .workspace { grid-template-columns: minmax(0, 1.15fr) minmax(260px, .85fr); gap: 12px; }
+    }
+    @media (max-width: 780px) {
+      .sidebar { position: static; width: auto; height: auto; padding: 15px 20px 10px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .brand { padding: 0; }
+      .nav-label, .sidebar-bottom { display: none; }
+      .nav-links { grid-auto-columns: max-content; grid-auto-flow: column; gap: 5px; margin-top: 14px; overflow-x: auto; }
+      .nav-link { gap: 8px; padding: 8px 10px; font-size: 11px; }
+      .nav-link svg { width: 16px; height: 16px; }
+      .main { margin-left: 0; padding: 0 20px 36px; }
+      .topbar { min-height: 62px; }
+      .overview { grid-template-columns: 1fr 1fr; }
+      .balance-card { grid-column: 1 / -1; min-height: 164px; }
+      .stat-card { min-height: 145px; }
+      .workspace { grid-template-columns: 1fr; }
+      .transfer-panel { grid-row: 1; }
+      .new-account-form { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .main { padding-right: 15px; padding-left: 15px; }
+      .welcome { align-items: flex-start; padding: 27px 0 20px; }
+      .welcome .button { width: 42px; min-width: 42px; padding: 0; font-size: 0; }
+      .welcome .button svg { width: 18px; height: 18px; }
+      .date-label { display: none; }
+      .overview { gap: 9px; }
+      .balance-card { min-height: 155px; padding: 19px; }
+      .stat-card { min-height: 132px; padding: 15px; }
+      .stat-value { font-size: 23px; }
+      .account-list { padding-right: 14px; padding-left: 14px; }
+      .account-row { grid-template-columns: minmax(110px, 1fr) auto; gap: 8px; }
+      .account-type { display: none; }
+      .panel-heading { padding-right: 15px; padding-left: 15px; }
+      .form-body { padding-right: 15px; padding-left: 15px; }
+      .activity-table-wrap { padding-right: 15px; padding-left: 15px; }
+    }
   </style>
 </head>
 <body>
-  <h1>MiniBank</h1>
-  <p id="msg"></p>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <a class="brand" href="#overview" aria-label="MiniBank home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h18M5 10v8m4-8v8m6-8v8m4-8v8M3 21h18M12 3 3 8h18L12 3Z"/></svg>
+        </span>
+        MiniBank
+      </a>
+      <p class="nav-label">Workspace</p>
+      <nav class="nav-links">
+        <a class="nav-link active" href="#overview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>
+          Overview
+        </a>
+        <a class="nav-link" href="#accounts">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18m-14 5h3"/></svg>
+          My accounts
+        </a>
+        <a class="nav-link" href="#transfer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h13l-3-3m3 3-3 3M17 17H4l3 3m-3-3 3-3"/></svg>
+          Send money
+        </a>
+        <a class="nav-link" href="#activity">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5m0 14h17M7 15l4-4 3 2 6-7"/></svg>
+          Activity
+        </a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="help-card">
+          <strong><span class="help-dot"></span>All systems running</strong>
+          <p>Your MiniBank services are connected and ready to go.</p>
+        </div>
+      </div>
+    </aside>
 
-  <h2>Accounts</h2>
-  <table><thead><tr><th>ID</th><th>Name</th><th>Balance (NGN)</th></tr></thead><tbody id="accounts"></tbody></table>
+    <main class="main">
+      <header class="topbar">
+        <div class="breadcrumb">Workspace <span aria-hidden="true">/</span> <strong>Overview</strong></div>
+        <div class="top-actions">
+          <span class="date-label" id="today"></span>
+          <span class="avatar" aria-label="MiniBank user">MB</span>
+        </div>
+      </header>
 
-  <h3>Open account</h3>
-  <form id="new-account">
-    <input name="name" placeholder="Full name" required>
-    <input name="balance" type="number" min="0" step="0.01" placeholder="Opening balance" required>
-    <button>Create</button>
-  </form>
+      <div class="content" id="overview">
+        <section class="welcome" aria-labelledby="welcome-title">
+          <div>
+            <p class="eyebrow">Your money, made simple</p>
+            <h1 id="welcome-title">Good day, welcome back <span aria-hidden="true">👋</span></h1>
+            <p class="welcome-copy">Here’s what’s happening with your MiniBank today.</p>
+          </div>
+          <a class="button" href="#transfer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14m-7-7h14"/></svg>
+            Send money
+          </a>
+        </section>
 
-  <h3>Transfer</h3>
-  <form id="transfer">
-    <input name="from" type="number" placeholder="From ID" required>
-    <input name="to" type="number" placeholder="To ID" required>
-    <input name="amount" type="number" min="0.01" step="0.01" placeholder="Amount" required>
-    <button>Send</button>
-  </form>
+        <section class="overview" aria-label="Banking overview">
+          <article class="balance-card">
+            <div class="balance-top"><span>Total across accounts</span><span class="balance-chip">NGN · Nigerian Naira</span></div>
+            <strong class="balance-amount" id="total-balance">₦0.00</strong>
+            <div class="balance-caption">Your combined account balance</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-head">
+              <span>My accounts</span>
+              <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18m-14 5h3"/></svg></span>
+            </div>
+            <div><div class="stat-value" id="account-count">—</div><div class="stat-note">Ready when you are</div></div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-head">
+              <span>Recent transfers</span>
+              <span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h13l-3-3m3 3-3 3M17 17H4l3 3m-3-3 3-3"/></svg></span>
+            </div>
+            <div><div class="stat-value" id="transaction-count">—</div><div class="stat-note">Latest transactions</div></div>
+          </article>
+        </section>
 
-  <h2>Recent transactions</h2>
-  <table><thead><tr><th>#</th><th>From</th><th>To</th><th>Amount</th><th>Time</th></tr></thead><tbody id="txs"></tbody></table>
+        <section class="workspace">
+          <article class="panel" id="accounts">
+            <div class="panel-heading">
+              <div><h2>Your accounts</h2><p>A clear view of your money</p></div>
+              <a class="text-link" href="#new-account">+ New account</a>
+            </div>
+            <div class="account-list" id="account-list" aria-live="polite">
+              <div class="empty-state">Loading your accounts…</div>
+            </div>
+          </article>
+
+          <article class="panel transfer-panel" id="transfer">
+            <div class="panel-heading">
+              <div><h2>Quick transfer</h2><p>Move money between accounts</p></div>
+              <span class="secure-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></svg>
+                Secure
+              </span>
+            </div>
+            <form id="transfer-form" class="form-body">
+              <div class="field">
+                <label for="from-account">From account</label>
+                <select id="from-account" name="from" required><option value="">Choose an account</option></select>
+              </div>
+              <div class="field">
+                <label for="to-account">To account</label>
+                <select id="to-account" name="to" required><option value="">Choose a recipient</option></select>
+              </div>
+              <div class="field">
+                <label for="transfer-amount">Amount</label>
+                <div class="amount-wrap"><span class="currency-prefix">NGN</span><input id="transfer-amount" name="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required></div>
+              </div>
+              <p class="form-hint">Transfers are only available between your accounts.</p>
+              <button class="button transfer-submit" type="submit">
+                Send transfer
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+              </button>
+            </form>
+          </article>
+        </section>
+
+        <section class="panel activity-panel" id="activity">
+          <div class="panel-heading">
+            <div><h2>Recent activity</h2><p>Your latest account transfers</p></div>
+            <span class="text-link">Last 50 transfers</span>
+          </div>
+          <div class="activity-table-wrap">
+            <table class="activity-table">
+              <thead><tr><th>TRANSFER</th><th>FROM</th><th>TO</th><th>DATE &amp; TIME</th><th>AMOUNT</th></tr></thead>
+              <tbody id="transaction-list"><tr><td colspan="5" class="empty-state">Loading recent activity…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel activity-panel" id="new-account">
+          <div class="panel-heading">
+            <div><h2>Open a new account</h2><p>Get started with a new MiniBank account</p></div>
+          </div>
+          <form id="new-account-form" class="form-body new-account-form">
+            <div class="field">
+              <label for="account-name">Account holder name</label>
+              <input id="account-name" name="name" type="text" maxlength="100" placeholder="e.g. Amara Okafor" required>
+            </div>
+            <div class="field">
+              <label for="opening-balance">Opening balance</label>
+              <div class="amount-wrap"><span class="currency-prefix">NGN</span><input id="opening-balance" name="balance" type="number" min="0" step="0.01" value="0" required></div>
+            </div>
+            <button class="button" type="submit">Create account</button>
+          </form>
+        </section>
+      </div>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
-const msg = (t) => (document.getElementById("msg").textContent = t);
-const money = (n) => Number(n).toLocaleString("en-NG", { minimumFractionDigits: 2 });
+const money = (value) => `₦${Number(value).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+})[character]);
+const accountInitials = (name) => String(name).trim().split(/\s+/).slice(0, 2).map((part) => part[0] || "").join("");
+const accountNames = new Map();
+let toastTimer;
 
-async function load() {
-  const accounts = await (await fetch("/accounts-api/accounts")).json();
-  document.getElementById("accounts").innerHTML = accounts
-    .map((a) => `<tr><td>${a.id}</td><td>${a.name}</td><td>${money(a.balance)}</td></tr>`).join("");
-  const txs = await (await fetch("/transactions-api/transactions")).json();
-  document.getElementById("txs").innerHTML = txs
-    .map((t) => `<tr><td>${t.id}</td><td>${t.from_account}</td><td>${t.to_account}</td><td>${money(t.amount)}</td><td>${new Date(t.created_at).toLocaleString()}</td></tr>`).join("");
+function showMessage(message, isError = false) {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.classList.toggle("error", isError);
+  toast.classList.add("visible");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove("visible"), 4000);
 }
 
-async function post(url, form) {
-  const body = Object.fromEntries(new FormData(form));
-  for (const k of ["from", "to", "amount", "balance"]) if (k in body) body[k] = Number(body[k]);
-  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  const data = await res.json();
-  msg(res.ok ? "Done ✔" : `Error: ${data.error}`);
-  if (res.ok) form.reset();
-  load();
+async function requestJson(url, options) {
+  const response = await fetch(url, options);
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error(response.ok ? "The server returned an unreadable response." : `Request failed (${response.status}).`);
+  }
+  if (!response.ok) throw new Error(data.error || `Request failed (${response.status}).`);
+  return data;
 }
 
-document.getElementById("new-account").onsubmit = (e) => { e.preventDefault(); post("/accounts-api/accounts", e.target); };
-document.getElementById("transfer").onsubmit = (e) => { e.preventDefault(); post("/transactions-api/transactions", e.target); };
-load();
+function renderAccounts(accounts) {
+  accountNames.clear();
+  accounts.forEach((account) => accountNames.set(account.id, account.name));
+  document.getElementById("account-count").textContent = accounts.length;
+  document.getElementById("total-balance").textContent = money(accounts.reduce((total, account) => total + Number(account.balance), 0));
+
+  const list = document.getElementById("account-list");
+  if (accounts.length === 0) {
+    list.innerHTML = '<div class="empty-state">No accounts yet. Open one below to get started.</div>';
+  } else {
+    list.innerHTML = accounts.map((account) => `
+      <div class="account-row">
+        <div class="account-person">
+          <span class="account-avatar" aria-hidden="true">${escapeHtml(accountInitials(account.name))}</span>
+          <span><span class="account-name">${escapeHtml(account.name)}</span><span class="account-id">Account #${account.id}</span></span>
+        </div>
+        <span class="account-type">MiniBank account</span>
+        <span class="account-balance">${money(account.balance)}</span>
+      </div>`).join("");
+  }
+
+  const from = document.getElementById("from-account");
+  const to = document.getElementById("to-account");
+  const previousFrom = from.value;
+  const previousTo = to.value;
+  const options = accounts.map((account) =>
+    `<option value="${account.id}">${escapeHtml(account.name)} · #${account.id} · ${money(account.balance)}</option>`).join("");
+  from.innerHTML = `<option value="">Choose an account</option>${options}`;
+  to.innerHTML = `<option value="">Choose a recipient</option>${options}`;
+  if (accounts.some((account) => String(account.id) === previousFrom)) from.value = previousFrom;
+  if (accounts.some((account) => String(account.id) === previousTo)) to.value = previousTo;
+  document.querySelector("#transfer-form button[type='submit']").disabled = accounts.length < 2;
+}
+
+function renderTransactions(transactions) {
+  document.getElementById("transaction-count").textContent = transactions.length;
+  const body = document.getElementById("transaction-list");
+  if (transactions.length === 0) {
+    body.innerHTML = '<tr><td colspan="5" class="empty-state">No transfers yet. Your activity will show up here.</td></tr>';
+    return;
+  }
+  body.innerHTML = transactions.map((transaction) => {
+    const fromName = accountNames.get(transaction.from_account) || `Account #${transaction.from_account}`;
+    const toName = accountNames.get(transaction.to_account) || `Account #${transaction.to_account}`;
+    const date = new Date(transaction.created_at);
+    const formattedDate = Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" });
+    return `<tr>
+      <td><span class="transfer-label"><span class="transfer-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h13l-3-3m3 3-3 3M17 17H4l3 3m-3-3 3-3"/></svg></span>Transfer #${transaction.id}</span></td>
+      <td><span>${escapeHtml(fromName)}</span><br><span class="tx-account">#${transaction.from_account}</span></td>
+      <td><span>${escapeHtml(toName)}</span><br><span class="tx-account">#${transaction.to_account}</span></td>
+      <td>${escapeHtml(formattedDate)}</td>
+      <td class="amount-out">− ${money(transaction.amount)}</td>
+    </tr>`;
+  }).join("");
+}
+
+async function loadDashboard() {
+  try {
+    const [accounts, transactions] = await Promise.all([
+      requestJson("/accounts-api/accounts"),
+      requestJson("/transactions-api/transactions"),
+    ]);
+    renderAccounts(accounts);
+    renderTransactions(transactions);
+  } catch (error) {
+    showMessage(`Couldn't load your banking data: ${error.message}`, true);
+  }
+}
+
+async function submitForm(form, url, payload, successMessage) {
+  const button = form.querySelector("button[type='submit']");
+  button.disabled = true;
+  try {
+    await requestJson(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    form.reset();
+    showMessage(successMessage);
+    await loadDashboard();
+  } catch (error) {
+    showMessage(error.message, true);
+  } finally {
+    if (form.id === "transfer-form") {
+      button.disabled = document.getElementById("from-account").options.length < 3;
+    } else {
+      button.disabled = false;
+    }
+  }
+}
+
+document.getElementById("transfer-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const formData = new FormData(event.currentTarget);
+  if (formData.get("from") === formData.get("to")) {
+    showMessage("Choose two different accounts for your transfer.", true);
+    return;
+  }
+  submitForm(event.currentTarget, "/transactions-api/transactions", {
+    from: Number(formData.get("from")),
+    to: Number(formData.get("to")),
+    amount: Number(formData.get("amount")),
+  }, "Transfer sent successfully.");
+});
+
+document.getElementById("new-account-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const formData = new FormData(event.currentTarget);
+  submitForm(event.currentTarget, "/accounts-api/accounts", {
+    name: formData.get("name"),
+    balance: Number(formData.get("balance")),
+  }, "Your new account is ready.");
+});
+
+document.getElementById("today").textContent = new Date().toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+loadDashboard();
 </script>
 </body>
 </html>
